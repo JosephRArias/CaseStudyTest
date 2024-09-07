@@ -24,7 +24,10 @@ public class RestrictContactByRecordTypeTest {
   @isTest
   static void testRestrictContactInsertion() {
     // Create a test Account
-    Account acc = new Account(Name = 'Test Account');
+    Account acc = new Account(
+      Name = 'Test Account',
+      RecordTypeId = '012bm000002IdwDAAS'
+    );
     insert acc;
 
     // Insert the first Contact with the restricted record type (this should succeed)
@@ -32,8 +35,7 @@ public class RestrictContactByRecordTypeTest {
       FirstName = 'John',
       LastName = 'Doe',
       Email = 'john.doe@example.com',
-      AccountId = acc.Id,
-      RecordTypeId = rt.Id
+      AccountId = acc.Id
     );
     insert con1;
 
@@ -42,8 +44,7 @@ public class RestrictContactByRecordTypeTest {
       FirstName = 'Jane',
       LastName = 'Smith',
       Email = 'jane.smith@example.com',
-      AccountId = acc.Id,
-      RecordTypeId = rt.Id
+      AccountId = acc.Id
     );
 
     // Test that the second insertion fails

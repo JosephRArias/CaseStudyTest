@@ -20,7 +20,7 @@
  * See the Apex Language Reference for more information about Testing and Code Coverage.
  */
 @isTest
-public class RestrictContactByRecordTypeTest {
+public class AccountTest {
   @isTest
   static void testRestrictContactInsertion() {
     // Create a test Account
@@ -54,7 +54,7 @@ public class RestrictContactByRecordTypeTest {
     } catch (DmlException e) {
       System.assert(
         e.getMessage()
-          .contains('Only one contact is allowed for Personal Record Type')
+          .contains('Only one contact is allowed on Personal Accounts')
       );
     }
   }

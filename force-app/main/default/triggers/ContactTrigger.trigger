@@ -9,43 +9,41 @@ trigger ContactTrigger on Contact(after update, before insert) {
       }
     }
     if (!accountIds.isEmpty()) {
-      List<AggregateResult> contactCount = [
-        SELECT COUNT(Id), AccountId
-        FROM Contact
-        WHERE AccountId IN :accountIds AND RecordTypeId = :personalRecordTypeId
-        GROUP BY AccountId
-      ];
-      Map<Id, Integer> accountToContactNumber = new Map<Id, Integer>();
-      for (AggregateResult ar : contactCount) {
-        accountToContactNumber.put(ar.get('AccountId'), ar.get(expr0));
-      }
+      Map<Id, Account> accountMap = new Map<Id, Account>(
+        [
+          SELECT Id, RecordType.Id, (SELECT Id FROM Contacts)
+          FROM Account
+          WHERE Id IN :accountIds
+        ]
+      );
       for (Contact con : Trigger.new) {
-        if (con.AccountId != null && con.RecordTypeId == personalRecordTypeId) {
-          Integer contactCount = accountToContactNumber.get(con.AccountId);
-          if (contactCount != null && contactCount >= 1) {
-            con.addError(
-              'Only one contact is allowed for Personal Record Type'
-            );
+        Account acc = accountMap.get(con.AccountId);
+        if (acc != null) {
+          if (
+            acc.Contacts.size() > 0 &&
+            acc.RecordType.Id == personalRecordTypeId
+          ) {
+            con.AddError('Only one contact is allowed on Personal Accounts');
           }
         }
       }
     }
-  }
 
-  if (Trigger.isUpdate) {
-    for (Contact con : Trigger.new) {
-      if (con.AccountId != null) {
-        accountIds.add(con.AccountId);
+    if (Trigger.isUpdate) {
+      for (Contact con : Trigger.new) {
+        if (con.AccountId != null) {
+          accountIds.add(con.AccountId);
+        }
       }
     }
-  }
 
-  if (!accountIds.isEmpty()) {
-    List<Account> accounts = new List<Account>();
-    accounts = [
-      SELECT Id, ShippingAddress, Name, Phone, Email
-      FROM Account
-      WHERE Id IN :accountIds
-    ];
+    /*if (!accountIds.isEmpty()) {
+      List<Account> accounts = new List<Account>();
+      accounts = [
+        SELECT Id, ShippingAddress, Name, Phone, Email
+        FROM Account
+        WHERE Id IN :accountIds
+      ];
+    }*/
   }
 }

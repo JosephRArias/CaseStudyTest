@@ -23,14 +23,12 @@
 public class AccountTest {
   @isTest
   static void testRestrictContactInsertion() {
-    // Create a test Account
     Account acc = new Account(
       Name = 'Test Account',
       RecordTypeId = '012bm000002IdwDAAS'
     );
     insert acc;
 
-    // Insert the first Contact with the restricted record type (this should succeed)
     Contact con1 = new Contact(
       FirstName = 'John',
       LastName = 'Doe',
@@ -39,7 +37,6 @@ public class AccountTest {
     );
     insert con1;
 
-    // Try to insert a second Contact with the same restricted record type (this should fail)
     Contact con2 = new Contact(
       FirstName = 'Jane',
       LastName = 'Smith',
@@ -47,9 +44,53 @@ public class AccountTest {
       AccountId = acc.Id
     );
 
-    // Test that the second insertion fails
     try {
       insert con2;
+      System.assert(false, 'The trigger should have thrown an exception.');
+    } catch (DmlException e) {
+      System.debug('Exception caught: ' + e.getMessage());
+      System.assert(
+        e.getMessage()
+          .contains('Only one contact is allowed on Personal Accounts')
+      );
+    }
+  }
+
+  @isTest
+  static void testRestrictContactUpdateToAccount() {
+    Account acc1 = new Account(
+      Name = 'Test Account',
+      RecordTypeId = '012bm000002IdwDAAS'
+    );
+    insert acc1;
+
+    Contact con1 = new Contact(
+      FirstName = 'John',
+      LastName = 'Doe',
+      Email = 'john.doe@example.com',
+      AccountId = acc1.Id
+    );
+    insert con1;
+    Account acc2 = new Account(
+      Name = 'Test Account 2',
+      RecordTypeId = '012bm000002IdwDAAS'
+    );
+    insert acc2;
+    Contact con2 = new Contact(
+      FirstName = 'Jane',
+      LastName = 'Doe',
+      Email = 'jane.doe@example.com',
+      AccountId = acc2.Id
+    );
+    insert con2;
+    try {
+      Contact c = [
+        SELECT Id, AccountId
+        FROM Contact
+        WHERE Email = 'jane.doe@example.com'
+      ];
+      c.AccountId = acc1.Id;
+      update c;
       System.assert(false, 'The trigger should have thrown an exception.');
     } catch (DmlException e) {
       System.assert(
@@ -57,5 +98,29 @@ public class AccountTest {
           .contains('Only one contact is allowed on Personal Accounts')
       );
     }
+  }
+  @isTest
+  static void testAccountUpdateOnContactUpdateOrInsert() {
+    Account acc = new Account(
+      Name = 'Test Account',
+      RecordTypeId = '012bm000002IdwDAAS'
+    );
+    insert acc;
+    Contact con = new Contact(
+      FirstName = 'Jose',
+      LastName = 'Arias',
+      Phone = '8005554040',
+      Email = 'jariasm@test.com',
+      AccountId = acc.Id
+    );
+    insert con;
+    Account updatedAccount = [
+      SELECT Id, Email__c, Phone, Name
+      FROM Account
+      WHERE Id = :acc.Id
+    ];
+    System.assertEquals('jariasm@test.com', updatedAccount.Email__c);
+    System.assertEquals('8005554040', updatedAccount.Phone);
+    System.assertEquals('Jose Arias', updatedAccount.Name);
   }
 }

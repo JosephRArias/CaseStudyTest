@@ -6,9 +6,12 @@ trigger ContactTrigger on Contact(
 ) {
   Set<Id> accountIds = new Set<Id>();
   String personalRecordTypeId = '012bm000002IdwDAAS';
-
+  if (TriggerHelper.isContactTriggerRunning) {
+    return;
+  }
+  TriggerHelper.isContactTriggerRunning = true;
   if (Trigger.isBefore) {
-    if (Trigger.isInsert || Trigger.isUpdate) {
+    if (Trigger.isInsert) {
       for (Contact con : Trigger.new) {
         if (con.AccountId != null) {
           accountIds.add(con.AccountId);
@@ -17,7 +20,7 @@ trigger ContactTrigger on Contact(
       if (!accountIds.isEmpty()) {
         Map<Id, Account> accountMap = new Map<Id, Account>(
           [
-            SELECT Id, RecordType.Id, (SELECT Id FROM Contacts)
+            SELECT Id, RecordTypeId, (SELECT Id FROM Contacts)
             FROM Account
             WHERE Id IN :accountIds
           ]
@@ -27,7 +30,34 @@ trigger ContactTrigger on Contact(
           if (acc != null) {
             if (
               acc.Contacts.size() > 0 &&
-              acc.RecordType.Id == personalRecordTypeId
+              acc.RecordTypeId == personalRecordTypeId
+            ) {
+              con.AddError('Only one contact is allowed on Personal Accounts');
+            }
+          }
+        }
+      }
+    } else if (Trigger.isUpdate) {
+      for (Contact con : Trigger.new) {
+        if (con.AccountId != null) {
+          accountIds.add(con.AccountId);
+        }
+      }
+      if (!accountIds.isEmpty()) {
+        Map<Id, Account> accountMap = new Map<Id, Account>(
+          [
+            SELECT Id, RecordTypeId, (SELECT Id FROM Contacts)
+            FROM Account
+            WHERE Id IN :accountIds
+          ]
+        );
+        for (Contact con : Trigger.new) {
+          Account acc = accountMap.get(con.AccountId);
+          Contact oldContact = Trigger.oldMap.get(con.Id);
+          if (acc != null && acc.Id != oldContact.AccountId) {
+            if (
+              acc.Contacts.size() > 0 &&
+              acc.RecordTypeId == personalRecordTypeId
             ) {
               con.AddError('Only one contact is allowed on Personal Accounts');
             }
@@ -80,4 +110,5 @@ trigger ContactTrigger on Contact(
       }
     }
   }
+  TriggerHelper.isContactTriggerRunning = false;
 }

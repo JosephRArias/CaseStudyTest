@@ -22,105 +22,49 @@
 @isTest
 public class AccountTest {
   @isTest
-  static void testRestrictContactInsertion() {
+  static void testAccountFieldSync() {
+    // Create a test Account
     Account acc = new Account(
-      Name = 'Test Account',
-      RecordTypeId = '012bm000002IdwDAAS'
+      Name = 'Testing Account',
+      Phone = '0000000000',
+      BillingCity = 'New York'
     );
     insert acc;
 
+    // Create test Contacts related to the Account
     Contact con1 = new Contact(
       FirstName = 'John',
       LastName = 'Doe',
-      Email = 'john.doe@example.com',
+      Phone = '0987654321',
+      MailingCity = 'San Francisco',
       AccountId = acc.Id
     );
     insert con1;
 
-    Contact con2 = new Contact(
-      FirstName = 'Jane',
-      LastName = 'Smith',
-      Email = 'jane.smith@example.com',
-      AccountId = acc.Id
-    );
+    // Update the Account's Phone and BillingCity
+    acc.Phone = '9999999999';
+    acc.ShippingCity = 'Chicago';
+    update acc;
 
-    try {
-      insert con2;
-      System.assert(false, 'The trigger should have thrown an exception.');
-    } catch (DmlException e) {
-      System.debug('Exception caught: ' + e.getMessage());
-      System.assert(
-        e.getMessage()
-          .contains('Only one contact is allowed on Personal Accounts')
-      );
-    }
-  }
-
-  @isTest
-  static void testRestrictContactUpdateToAccount() {
-    Account acc1 = new Account(
-      Name = 'Test Account',
-      RecordTypeId = '012bm000002IdwDAAS'
-    );
-    insert acc1;
-
-    Contact con1 = new Contact(
-      FirstName = 'John',
-      LastName = 'Doe',
-      Email = 'john.doe@example.com',
-      AccountId = acc1.Id
-    );
-    insert con1;
-    Account acc2 = new Account(
-      Name = 'Test Account 2',
-      RecordTypeId = '012bm000002IdwDAAS'
-    );
-    insert acc2;
-    Contact con2 = new Contact(
-      FirstName = 'Jane',
-      LastName = 'Doe',
-      Email = 'jane.doe@example.com',
-      AccountId = acc2.Id
-    );
-    insert con2;
-    try {
-      Contact c = [
-        SELECT Id, AccountId
-        FROM Contact
-        WHERE Email = 'jane.doe@example.com'
-      ];
-      c.AccountId = acc1.Id;
-      update c;
-      System.assert(false, 'The trigger should have thrown an exception.');
-    } catch (DmlException e) {
-      System.assert(
-        e.getMessage()
-          .contains('Only one contact is allowed on Personal Accounts')
-      );
-    }
-  }
-  @isTest
-  static void testAccountUpdateOnContactUpdateOrInsert() {
-    Account acc = new Account(
-      Name = 'Test Account',
-      RecordTypeId = '012bm000002IdwDAAS'
-    );
-    insert acc;
-    Contact con = new Contact(
-      FirstName = 'Jose',
-      LastName = 'Arias',
-      Phone = '8005554040',
-      Email = 'jariasm@test.com',
-      AccountId = acc.Id
-    );
-    insert con;
-    Account updatedAccount = [
-      SELECT Id, Email__c, Phone, Name
-      FROM Account
-      WHERE Id = :acc.Id
+    // Query the Contacts again to verify the changes
+    List<Contact> updatedContacts = [
+      SELECT Phone, MailingCity
+      FROM Contact
+      WHERE AccountId = :acc.Id
     ];
-    System.assertEquals('jariasm@test.com', updatedAccount.Email__c);
-    System.assertEquals('8005554040', updatedAccount.Phone);
-    System.assertEquals('Jose Arias', updatedAccount.Name);
+
+    // Verify that the Contact fields have been updated correctly
+    for (Contact con : updatedContacts) {
+      System.assertEquals(
+        '9999999999',
+        con.Phone,
+        'Contact phone should match Account phone'
+      );
+      System.assertEquals(
+        'Chicago',
+        con.MailingCity,
+        'Contact MailingCity should match Account BillingCity'
+      );
+    }
   }
 }

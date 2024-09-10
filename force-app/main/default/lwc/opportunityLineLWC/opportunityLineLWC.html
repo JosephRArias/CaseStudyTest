@@ -1,0 +1,31 @@
+<template>
+    <lightning-card title="Add Opportunity Products">
+        <div class="slds-p-around_medium">
+            <lightning-combobox
+              name="product"
+              label="Product"
+              value={newLineItem.productId}
+              placeholder="Select Product"
+              options={pricebookEntries}
+              onchange={handleProductChange} 
+               
+               
+            ></lightning-combobox>
+            <lightning-input 
+              type="number"
+              label="Quantity"
+              value={newLineItem.quantity}
+              onchange={handleQuantityChange}
+            ></lightning-input>
+            <lightning-input 
+              type="number"
+              label="Unit Price"
+              value={newLineItem.unitPrice}
+              onchange={handleUnitPriceChange}
+            ></lightning-input>
+            <lightning-button class="slds-m-left_x-small"
+            label="Add Line Item"
+            onclick={addLineItem}></lightning-button>
+        </div>
+    </lightning-card>
+</template>

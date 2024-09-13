@@ -34,12 +34,7 @@ public with sharing class OpportunityProductController {
   @AuraEnabled(cacheable=true)
   public static List<OpportunityLineItem> populateDataTable(Id opportunityId) {
     return [
-      SELECT
-        Quantity,
-        UnitPrice,
-        TotalPrice,
-        PricebookEntry.Name,
-        PricebookEntry.Product2.Family
+      SELECT Quantity, UnitPrice, TotalPrice, PricebookEntry.Name, Discount
       FROM OpportunityLineItem
       WHERE OpportunityId = :opportunityId
     ];

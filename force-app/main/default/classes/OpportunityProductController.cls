@@ -51,6 +51,7 @@ public with sharing class OpportunityProductController {
         SELECT UnitPrice
         FROM PricebookEntry
         WHERE Product2Id = :Product2Id
+        LIMIT 1
       ];
       return result.UnitPrice;
     } catch (Exception e) {

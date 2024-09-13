@@ -3,18 +3,25 @@ import getProductEntries from "@salesforce/apex/OpportunityProductController.get
 import addOpportunityProduct from "@salesforce/apex/OpportunityProductController.addOpportunityProduct";
 import populateDataTable from "@salesforce/apex/OpportunityProductController.populateDataTable";
 import getUnitPrice from "@salesforce/apex/OpportunityProductController.getUnitPrice";
+import { refreshApex } from "@salesforce/apex";
 
+const columns = [
+  { label: "Product Name", fieldName: "PricebookEntry.Name", type: "text" },
+  { label: "Quantity", fieldName: "Quantity", type: "number" }
+];
 export default class OpportunityLineLWC extends LightningElement {
   @api recordId;
   @track pricebookEntries = [];
   @track addedProducts = [];
+  columns = columns;
+  _wiredResult;
+  error;
   @track newLineItem = {
     productId: "",
     quantity: 1,
     unitPrice: 0.0,
     pricebook2Id: "01sbm000004JhLWAA0"
   };
-
   connectedCallback() {
     this.fetchPricebookEntries();
   }
@@ -32,10 +39,20 @@ export default class OpportunityLineLWC extends LightningElement {
         console.error("Error fetching Pricebook Entries:", error);
       });
   }
-
+  @wire(populateDataTable, { opportunityId: "$recordId" })
+  wiredProducts(result) {
+    this._wiredResult = result;
+    if (result.data) {
+      this.addedProducts = result.data;
+      this.error = undefined;
+    } else if (result.error) {
+      this.error = result.error;
+      this.addedProducts = undefined;
+    }
+  }
   handleProductChange(event) {
     this.newLineItem.productId = event.target.value;
-    getUnitPrice(this.newLineItem.productId).then((result) => {
+    getUnitPrice({ Product2Id: this.newLineItem.productId }).then((result) => {
       console.log(result);
       this.newLineItem.unitPrice = result;
     });
@@ -54,11 +71,6 @@ export default class OpportunityLineLWC extends LightningElement {
       UnitPrice: this.newLineItem.unitPrice,
       Pricebook2Id: this.newLineItem.pricebook2Id
     };
-    console.log("Line Item Opportunity ", lineItem.OpportunityId);
-    console.log("Line Item Product Id ", lineItem.Product2Id);
-    console.log("Line Item Quantity ", lineItem.Quantity);
-    console.log("Line Item Unit Price", lineItem.UnitPrice);
-    console.log("Line Item PriceBookId ", lineItem.Pricebook2Id);
     addOpportunityProduct({
       opportunityId: this.recordId,
       products: [lineItem]
@@ -70,9 +82,6 @@ export default class OpportunityLineLWC extends LightningElement {
       .catch((error) => {
         console.error("Error adding Opportunity Line Item:", error);
       });
-    populateDataTable({ opportunityId: this.recordId }).then((result) => {
-      console.log("Products: ", result);
-      this.addedProducts = result;
-    });
+    refreshApex(this.wiredProducts);
   }
 }

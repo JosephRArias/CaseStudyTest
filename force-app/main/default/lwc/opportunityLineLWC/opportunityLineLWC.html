@@ -28,4 +28,12 @@
           </div>
         </div>
     </lightning-card>
+    <lightning-card title="Opportunity Products">
+      <lightning-datatable
+        key-field="productId"
+        data={addedProducts}
+        columns={columns}
+        hide-checkbox-column="true"
+      ></lightning-datatable>
+    </lightning-card>
 </template>

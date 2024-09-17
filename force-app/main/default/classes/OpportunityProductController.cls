@@ -15,8 +15,10 @@ public with sharing class OpportunityProductController {
       WHERE Id = '01sbm000004JhLWAA0'
       LIMIT 1
     ];
-    opp.Pricebook2Id = pricebook.Id;
-    update opp;
+    if (opp.Pricebook2Id == null) {
+      opp.Pricebook2Id = pricebook.Id;
+      update opp;
+    }
     for (OpportunityLineItem oli : products) {
       oli.OpportunityId = opportunityId;
     }

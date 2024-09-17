@@ -13,7 +13,17 @@ const columns = [
     editable: false
   },
   { label: "Quantity", fieldName: "Quantity", type: "number", editable: true },
-  { label: "Discount", fieldName: "Discount", type: "percent", editable: true },
+  {
+    label: "Discount",
+    fieldName: "Discount",
+    type: "percent",
+    typeAttributes: {
+      step: "0.01",
+      minimumFractionDigits: "2",
+      maximumFractionDigits: "3"
+    },
+    editable: true
+  },
   {
     label: "Total Price",
     fieldName: "TotalPrice",

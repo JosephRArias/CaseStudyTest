@@ -77,4 +77,34 @@ private class UserTest {
       'The object name should be User.'
     );
   }
+
+  @isTest
+  static void noChangeTracking() {
+    Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
+    User us = new User(
+      FirstName = 'Jose',
+      LastName = 'Test',
+      MobilePhone = '8097630031',
+      Department = 'Finance',
+      CompanyName = 'Consulting Firm Name',
+      Username = 'josetest@test.com',
+      Alias = 'testus',
+      Email = 'testemail@test.com',
+      TimeZoneSidKey = 'America/Los_Angeles',
+      LocaleSidKey = 'en_US',
+      EmailEncodingKey = 'UTF-8',
+      ProfileId = p.Id,
+      LanguageLocaleKey = 'en_US'
+    );
+    insert us;
+    us.Department = 'Finance';
+    update us;
+    List<Field_Change_History__c> histories = [
+      SELECT Field_Name__c, Old_Value__c, New_Value__c, Object_Name__c
+      FROM Field_Change_History__c
+      WHERE Name = :us.Id
+    ];
+
+    System.assertEquals(0, histories.size(), 'No change tracked');
+  }
 }

@@ -55,26 +55,22 @@ public with sharing class OpportunityProductController {
   @AuraEnabled(cacheable=true)
   public static List<OpportunityLineItem> populateDataTable(Id opportunityId) {
     return [
-      SELECT Quantity, UnitPrice, TotalPrice, PricebookEntry.Name, Discount
+      SELECT Quantity, UnitPrice, TotalPrice, PricebookEntry.Name, Discount, Id
       FROM OpportunityLineItem
       WHERE OpportunityId = :opportunityId
     ];
   }
-  @AuraEnabled(cacheable=true)
-  public static Decimal getUnitPrice(Id Product2Id) {
+  @AuraEnabled
+  public static void updateRecords(
+    List<OpportunityLineItem> opportunityLineData
+  ) {
     try {
-      PricebookEntry result = [
-        SELECT UnitPrice
-        FROM PricebookEntry
-        WHERE Product2Id = :Product2Id
-        LIMIT 1
-      ];
-      return result.UnitPrice;
-    } catch (Exception e) {
-      // Handle error or return a default value
-      throw new AuraHandledException(
-        'Error fetching UnitPrice: ' + e.getMessage()
-      );
+      if (!opportunityLineData.isEmpty()) {
+        update opportunityLineData;
+      }
+    } catch (DmlException e) {
+      String errorMessage = e.getDmlMessage(0);
+      throw new AuraHandledException(errorMessage);
     }
   }
   public OpportunityProductController() {

@@ -23,10 +23,12 @@
     </lightning-card>
     <lightning-card title="Opportunity Products">
       <lightning-datatable
-        key-field="productId"
+        key-field="Id"
         data={addedProducts}
         columns={selectedColumns}
+        draft-values={draftValues}
         hide-checkbox-column="true"
+        onsave={updateSelectedRows}
       ></lightning-datatable>
     </lightning-card>
 </template>

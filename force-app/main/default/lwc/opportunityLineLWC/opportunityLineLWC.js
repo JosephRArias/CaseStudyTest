@@ -2,8 +2,9 @@ import { LightningElement, api, wire, track } from "lwc";
 import getProductEntries from "@salesforce/apex/OpportunityProductController.getProductEntries";
 import addOpportunityProduct from "@salesforce/apex/OpportunityProductController.addOpportunityProduct";
 import populateDataTable from "@salesforce/apex/OpportunityProductController.populateDataTable";
-import getUnitPrice from "@salesforce/apex/OpportunityProductController.getUnitPrice";
+import updateRecords from "@salesforce/apex/OpportunityProductController.updateRecords";
 import { refreshApex } from "@salesforce/apex";
+import { ShowToastEvent } from "lightning/platformShowToastEvent";
 
 const columns = [
   {
@@ -53,15 +54,10 @@ export default class OpportunityLineLWC extends LightningElement {
   columns = columns;
   selectedColumns = selectedColumns;
   @track selectedProducts = [];
+  draftValues = [];
   _wiredResult;
   _wiredSelect;
   error;
-  @track newLineItem = {
-    productId: "",
-    quantity: 1,
-    unitPrice: 0.0,
-    pricebook2Id: "01sbm000004JhLWAA0"
-  };
   @wire(getProductEntries, { pricebookId: "01sbm000004JhLWAA0" })
   wiredSelect(result) {
     this._wiredSelect = result;
@@ -100,6 +96,10 @@ export default class OpportunityLineLWC extends LightningElement {
       productIds: productIds
     })
       .then(() => {
+        this.products = this.products.filter(
+          (product) => !productIds.includes(product.Product2Id)
+        );
+
         // Handle success
         console.log("Opportunity Line Item added");
         refreshApex(this._wiredResult);
@@ -107,5 +107,34 @@ export default class OpportunityLineLWC extends LightningElement {
       .catch((error) => {
         console.error("Error adding Opportunity Line Item:", error);
       });
+  }
+  async updateSelectedRows(event) {
+    this.draftValues = event.detail.draftValues;
+    console.log(this.draftValues);
+    updateRecords({ opportunityLineData: this.draftValues })
+      .then((result) => {
+        console.log("Result: ", result);
+        this.draftValues = [];
+        refreshApex(this._wiredResult);
+      })
+      .catch((error) => {
+        const errorMessage = error.body.message;
+
+        this.showToast(
+          "Error",
+          "Error updating records: " + errorMessage,
+          "error"
+        );
+
+        this.draftValues = [...this.draftValues];
+      });
+  }
+  showToast(title, message, variant) {
+    const event = new ShowToastEvent({
+      title: title,
+      message: message,
+      variant: variant
+    });
+    this.dispatchEvent(event);
   }
 }

@@ -8,7 +8,21 @@ import { refreshApex } from "@salesforce/apex";
 const columns = [
   {
     label: "Product Name",
-    fieldName: "name",
+    fieldName: "Name",
+    type: "text",
+    editable: false
+  },
+  {
+    label: "Unit Price",
+    fieldName: "UnitPrice",
+    type: "currency",
+    editable: false
+  }
+];
+const selectedColumns = [
+  {
+    label: "Product Name",
+    fieldName: "Name",
     type: "text",
     editable: false
   },
@@ -35,8 +49,12 @@ export default class OpportunityLineLWC extends LightningElement {
   @api recordId;
   @track pricebookEntries = [];
   @track addedProducts = [];
+  @track products;
   columns = columns;
+  selectedColumns = selectedColumns;
+  @track selectedProducts = [];
   _wiredResult;
+  _wiredSelect;
   error;
   @track newLineItem = {
     productId: "",
@@ -44,22 +62,15 @@ export default class OpportunityLineLWC extends LightningElement {
     unitPrice: 0.0,
     pricebook2Id: "01sbm000004JhLWAA0"
   };
-  connectedCallback() {
-    this.fetchPricebookEntries();
-  }
-
-  fetchPricebookEntries() {
-    getProductEntries({ pricebookId: "01sbm000004JhLWAA0" })
-      .then((result) => {
-        console.log("Pricebook Entries:", result);
-        this.pricebookEntries = result.map((entry) => ({
-          label: entry.Name,
-          value: entry.Product2Id
-        }));
-      })
-      .catch((error) => {
-        console.error("Error fetching Pricebook Entries:", error);
-      });
+  @wire(getProductEntries, { pricebookId: "01sbm000004JhLWAA0" })
+  wiredSelect(result) {
+    this._wiredSelect = result;
+    if (result.data) {
+      this.products = result.data;
+    } else if (result.error) {
+      this.error = result.error;
+      this.products = undefined;
+    }
   }
   @wire(populateDataTable, { opportunityId: "$recordId" })
   wiredProducts(result) {
@@ -68,7 +79,7 @@ export default class OpportunityLineLWC extends LightningElement {
       this.addedProducts = result.data.map((entry) => {
         return {
           ...entry,
-          name: entry.PricebookEntry.Name
+          Name: entry.PricebookEntry.Name
         };
       });
       this.error = undefined;
@@ -77,28 +88,16 @@ export default class OpportunityLineLWC extends LightningElement {
       this.addedProducts = undefined;
     }
   }
-  handleProductChange(event) {
-    this.newLineItem.productId = event.target.value;
-    getUnitPrice({ Product2Id: this.newLineItem.productId }).then((result) => {
-      this.newLineItem.unitPrice = result;
-    });
+  handleRowSelection(event) {
+    console.log("Selected Rows:", event.detail.selectedRows);
+    this.selectedProducts = event.detail.selectedRows;
   }
 
-  handleQuantityChange(event) {
-    this.newLineItem.quantity = event.target.value;
-  }
-
-  addLineItem() {
-    const lineItem = {
-      OpportunityId: this.recordId,
-      Product2Id: this.newLineItem.productId,
-      Quantity: this.newLineItem.quantity,
-      UnitPrice: this.newLineItem.unitPrice,
-      Pricebook2Id: this.newLineItem.pricebook2Id
-    };
+  moveSelectedProducts() {
+    const productIds = this.selectedProducts.map((row) => row.Product2Id);
     addOpportunityProduct({
       opportunityId: this.recordId,
-      products: [lineItem]
+      productIds: productIds
     })
       .then(() => {
         // Handle success

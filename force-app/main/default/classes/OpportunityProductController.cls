@@ -2,8 +2,9 @@ public with sharing class OpportunityProductController {
   @AuraEnabled(cacheable=false)
   public static void addOpportunityProduct(
     Id opportunityId,
-    List<OpportunityLineItem> products
+    List<Id> productIds
   ) {
+    List<OpportunityLineItem> lineItems = new List<OpportunityLineItem>();
     Opportunity opp = [
       SELECT Id, Pricebook2Id
       FROM Opportunity
@@ -19,10 +20,28 @@ public with sharing class OpportunityProductController {
       opp.Pricebook2Id = pricebook.Id;
       update opp;
     }
-    for (OpportunityLineItem oli : products) {
-      oli.OpportunityId = opportunityId;
+    /*Map<Id, PricebookEntry> pricebookEntryMap= new Map<Id, PricebookEntry>(
+      [SELECT Id, Product2Id FROM Product2 WHERE Product2Id IN :productIds AND Pricebook2Id = '01sbm000004JhLWAA0']
+    );*/
+    List<PricebookEntry> entries = [
+      SELECT Id, Name, Product2Id, UnitPrice
+      FROM PricebookEntry
+      WHERE Pricebook2Id = :pricebook.Id AND Product2Id IN :productIds
+    ];
+    for (PricebookEntry ent : entries) {
+      OpportunityLineItem lineItem = new OpportunityLineItem(
+        OpportunityId = opportunityId,
+        Product2Id = ent.Product2Id,
+        Quantity = 1,
+        UnitPrice = ent.UnitPrice
+      );
+      lineItems.add(lineItem);
     }
-    insert products;
+
+    // Insert OpportunityLineItem records
+    if (!lineItems.isEmpty()) {
+      insert lineItems;
+    }
   }
 
   @AuraEnabled(cacheable=true)

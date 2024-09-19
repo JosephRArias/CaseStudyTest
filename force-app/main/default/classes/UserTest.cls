@@ -49,7 +49,6 @@ private class UserTest {
       FROM Field_Change_History__c
       WHERE Name = :us.Id
     ];
-    // Assertions to verify correct tracking
     System.assertEquals(
       1,
       histories.size(),

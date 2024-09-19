@@ -20,9 +20,6 @@ public with sharing class OpportunityProductController {
       opp.Pricebook2Id = pricebook.Id;
       update opp;
     }
-    /*Map<Id, PricebookEntry> pricebookEntryMap= new Map<Id, PricebookEntry>(
-      [SELECT Id, Product2Id FROM Product2 WHERE Product2Id IN :productIds AND Pricebook2Id = '01sbm000004JhLWAA0']
-    );*/
     List<PricebookEntry> entries = [
       SELECT Id, Name, Product2Id, UnitPrice
       FROM PricebookEntry
@@ -38,7 +35,6 @@ public with sharing class OpportunityProductController {
       lineItems.add(lineItem);
     }
 
-    // Insert OpportunityLineItem records
     if (!lineItems.isEmpty()) {
       insert lineItems;
     }

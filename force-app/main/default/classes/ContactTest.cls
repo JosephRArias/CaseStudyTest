@@ -48,7 +48,6 @@ private class ContactTest {
       insert con2;
       System.assert(false, 'The trigger should have thrown an exception.');
     } catch (DmlException e) {
-      System.debug('Exception caught: ' + e.getMessage());
       System.assert(
         e.getMessage()
           .contains('Only one contact is allowed on Personal Accounts')

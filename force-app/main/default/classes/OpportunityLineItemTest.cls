@@ -61,7 +61,6 @@ private class OpportunityLineItemTest {
   }
   @isTest
   static void opportunityStageUpdateTest() {
-    //Pricebook2 pb = [SELECT Id FROM Pricebook2 WHERE Id = '01sbm000004JhLWAA0'];
     Product2 prod = new Product2(Name = 'Test Product', IsActive = true);
     insert prod;
     PricebookEntry pbe = new PricebookEntry(
@@ -72,7 +71,6 @@ private class OpportunityLineItemTest {
     );
     insert pbe;
 
-    // Step 1: Create an Opportunity
     Opportunity opp = new Opportunity(
       Name = 'Test Opportunity',
       StageName = 'Qualification',
@@ -80,8 +78,6 @@ private class OpportunityLineItemTest {
       Pricebook2Id = '01sbm000004JhLWAA0'
     );
     insert opp;
-
-    // Step 2: Create Opportunity Line Item related to the Opportunity
     OpportunityLineItem oli = new OpportunityLineItem(
       OpportunityId = opp.Id,
       PricebookEntryId = pbe.Id,
@@ -89,17 +85,14 @@ private class OpportunityLineItemTest {
       UnitPrice = 100
     );
 
-    // Insert the Opportunity Line Item (this will trigger the UpdateOpportunityStatusOnOLI trigger)
     insert oli;
 
-    // Step 3: Query the Opportunity to check if the StageName has been updated
     Opportunity updatedOpp = [
       SELECT StageName
       FROM Opportunity
       WHERE Id = :opp.Id
     ];
 
-    // Step 4: Assert that the StageName was updated by the trigger
     System.assertEquals(
       'Value Proposition',
       updatedOpp.StageName,
